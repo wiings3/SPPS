@@ -40,7 +40,8 @@ static func evaluate_best(cards: Array[Dictionary]) -> Array[int]:
 	var best: Array[int] = []
 	var count: int = cards.size()
 	if count < 5:
-		return [0, 0]
+		var empty_score: Array[int] = [0, 0]
+		return empty_score
 	for a in range(count - 4):
 		for b in range(a + 1, count - 3):
 			for c in range(b + 1, count - 2):
@@ -82,7 +83,8 @@ static func evaluate_five(cards: Array[Dictionary]) -> Array[int]:
 			straight_high = dedup[0]
 
 	if flush and straight_high > 0:
-		return [8, straight_high]
+		var straight_flush_score: Array[int] = [8, straight_high]
+		return straight_flush_score
 
 	var fours: Array[int] = []
 	var threes: Array[int] = []
@@ -100,14 +102,38 @@ static func evaluate_five(cards: Array[Dictionary]) -> Array[int]:
 	pairs.sort(); pairs.reverse()
 	singles.sort(); singles.reverse()
 
-	if not fours.is_empty(): return [7, fours[0], singles[0]]
-	if not threes.is_empty() and not pairs.is_empty(): return [6, threes[0], pairs[0]]
-	if flush: return [5] + ranks
-	if straight_high > 0: return [4, straight_high]
-	if not threes.is_empty(): return [3, threes[0]] + singles
-	if pairs.size() >= 2: return [2, pairs[0], pairs[1], singles[0]]
-	if pairs.size() == 1: return [1, pairs[0]] + singles
-	return [0] + ranks
+	if not fours.is_empty():
+		var four_kind_score: Array[int] = [7, fours[0], singles[0]]
+		return four_kind_score
+	if not threes.is_empty() and not pairs.is_empty():
+		var full_house_score: Array[int] = [6, threes[0], pairs[0]]
+		return full_house_score
+	if flush:
+		return _score_with_tail(5, ranks)
+	if straight_high > 0:
+		var straight_score: Array[int] = [4, straight_high]
+		return straight_score
+	if not threes.is_empty():
+		var trips_prefix: Array[int] = [3, threes[0]]
+		return _score_with_prefix(trips_prefix, singles)
+	if pairs.size() >= 2:
+		var two_pair_score: Array[int] = [2, pairs[0], pairs[1], singles[0]]
+		return two_pair_score
+	if pairs.size() == 1:
+		var pair_prefix: Array[int] = [1, pairs[0]]
+		return _score_with_prefix(pair_prefix, singles)
+	return _score_with_tail(0, ranks)
+
+static func _score_with_tail(category: int, tail: Array[int]) -> Array[int]:
+	var score: Array[int] = [category]
+	score.append_array(tail)
+	return score
+
+static func _score_with_prefix(prefix: Array[int], tail: Array[int]) -> Array[int]:
+	var score: Array[int] = []
+	score.append_array(prefix)
+	score.append_array(tail)
+	return score
 
 static func compare_scores(a: Array[int], b: Array[int]) -> int:
 	var length: int = maxi(a.size(), b.size())
